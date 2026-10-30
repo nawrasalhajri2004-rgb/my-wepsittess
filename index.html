@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة حكايات الصغار - قراءة وفهم</title>
+
+    <!-- استدعاء مكتبات Firebase السحابية -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --secondary: #a29bfe;
+            --accent: #fdcb6e;
+            --bg: #f8f9fa;
+            --text: #2d3436;
+            --white: #ffffff;
+            --success: #00b894;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--white);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 5px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+            flex: 1;
+            width: 100%;
+        }
+        .card {
+            background: var(--white);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background-color: var(--primary);
+            color: var(--white);
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin: 10px;
+            font-weight: bold;
+        }
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        .btn-teacher {
+            background-color: #0984e3;
+        }
+        .btn-student {
+            background-color: #00b894;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            text-align: right;
+        }
+        .hidden {
+            display: none !important;
+        }
+        /* Stories Grid */
+        .stories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .story-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            text-align: right;
+            border-top: 5px solid var(--primary);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .story-card h3 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        .story-card p {
+            font-size: 0.95rem;
+            color: #636e72;
+            margin-bottom: 15px;
+        }
+        /* Reader Mode */
+        .story-content {
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: right;
+            line-height: 1.8;
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+            border: 2px dashed var(--secondary);
+        }
+        .quiz-section {
+            background: #f1f2f6;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: right;
+        }
+        .question-box {
+            margin-bottom: 20px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .options label {
+            display: block;
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+        }
+        .options label:hover {
+            background: #e2e8f0;
+        }
+        /* Table for Teacher */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            text-align: right;
+        }
+        th, td {
+            border: 1px solid #dfe6e9;
+            padding: 12px;
+        }
+        th {
+            background-color: var(--primary);
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .back-btn {
+            background: #636e72;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🌟 منصة حكايات الصغار 🌟</h1>
+        <p>موقع قصص ومتابعة تفاعلية لطلاب الصف الأول الابتدائي</p>
+    </header>
+
+    <div class="container">
+
+        <!-- 1. الشاشة الرئيسية -->
+        <div id="home-screen" class="card">
+            <h2>مرحباً بك في عالم القصص الممتعة!</h2>
+            <p style="margin: 20px 0; color: #636e72;">الرجاء تحديد نوع الدخول للمتابعة:</p>
+            <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+                <button class="btn btn-student" onclick="showStudentLogin()">🎒 دخول كطالب</button>
+                <button class="btn btn-teacher" onclick="showTeacherLogin()">👩‍🏫 دخول كمعلم</button>
+            </div>
+        </div>
+
+        <!-- 2. شاشة تسجيل الطالب -->
+        <div id="student-login-screen" class="card hidden">
+            <h2>تسجيل دخول الطالب</h2>
+            <p>أدخل بياناتك للبدء في رحلة القراءة:</p>
+            <input type="text" id="student-name" placeholder="اسم الطالب الثلاثي...">
+            <input type="text" id="student-class" placeholder="الصف والشعبة (مثال: أول أول / أول ثاني)...">
+            <button class="btn btn-student" onclick="startStudentJourney()">ابدأ القراءة</button>
+            <br>
+            <button class="btn back-btn" onclick="goHome()">رجوع</button>
+        </div>
+
+        <!-- 3. شاشة دخول المعلم -->
+        <div id="teacher-auth-screen" class="card hidden">
+            <h2>لوحة تحكم المعلم</h2>
+            <p>الرجاء إدخال رمز المرور (الافتراضي: 1234):</p>
+            <input type="password" id="teacher-pass" placeholder="كلمة المرور...">
+            <button class="btn btn-teacher" onclick="verifyTeacher()">دخول لوحة المتابعة</button>
+            <br>
+            <button class="btn back-btn" onclick="goHome()">رجوع</button>
+        </div>
+
+        <!-- 4. قائمة القصص للطالب -->
+        <div id="stories-list-screen" class="hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 id="welcome-student-msg">مرحباً بك يا بطل</h2>
+                <button class="btn back-btn" onclick="goHome()">تسجيل الخروج</button>
+            </div>
+            <h3>اختر قصة للاستمتاع بقراءتها والإجابة عن أسئلتها:</h3>
+            <div class="stories-grid" id="stories-grid-container"></div>
+        </div>
+
+        <!-- 5. شاشة قراءة القصة والأسئلة -->
+        <div id="story-reader-screen" class="hidden">
+            <button class="btn back-btn" onclick="backToStories()">← العودة لقائمة القصص</button>
+            <div class="card" style="text-align: right;">
+                <h2 id="reader-story-title" style="color: var(--primary); margin-bottom: 15px;"></h2>
+                <div class="story-content" id="reader-story-text"></div>
+                
+                <div class="quiz-section">
+                    <h3 style="margin-bottom: 15px; color: var(--primary);">📝 أسئلة الفهم القرائي (5 أسئلة):</h3>
+                    <div id="quiz-questions-container"></div>
+                    <button class="btn" id="submit-btn" onclick="submitQuiz()">إرسال الإجابات وحفظ النتيجة</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. لوحة متابعة المعلم -->
+        <div id="teacher-dashboard-screen" class="hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>📊 لوحة متابعة الطلاب للمعلم</h2>
+                <div>
+                    <button class="btn" style="background-color: #0984e3;" onclick="loadTeacherDashboard()">تحديث البيانات 🔄</button>
+                    <button class="btn back-btn" onclick="goHome()">تسجيل الخروج</button>
+                </div>
+            </div>
+            <div class="card" style="overflow-x: auto;">
+                <h3>سجلات إنجاز الطلاب (مباشر من القاعدة السحابية)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>اسم الطالب</th>
+                            <th>الصف</th>
+                            <th>القصة المقروءة</th>
+                            <th>الدرجة (من 5)</th>
+                            <th>وقت الإنجاز</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teacher-records-table">
+                        <tr><td colspan="5" style="text-align:center;">جاري تحميل البيانات...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- تهيئة Firebase السحابية ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDemoKeyForStoryReadingApp2026",
+            authDomain: "story-app-db.firebaseapp.com",
+            projectId: "story-app-db",
+            storageBucket: "story-app-db.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        // --- البيانات والقصص (30 قصة) ---
+        const storiesData = [];
+        const storyTitles = [
+            "العصفور الشجاع", "قطرة المطر الحالمة", "النحلة النشيطة", "شجرة التفاح الكريمة", "الأسد والفأر الصغير",
+            "الفراشة الملونة", "السلحفاة السريعة", "الأرنب الذكي", "القمر الصديق", "السحابة البيضاء",
+            "السمكة الذهبية", "القنفذ اللطيف", "الخروف الضائع", "الكلب الوفي", "الدجاجة الودودة",
+            "النملة المهندسة", "الفيل الجريء", "الزرافة الطويلة", "القرد المشاكس", "الدب الكسول",
+            "البطة الصديقة", "الجمل الصابر", "الصقر الحكيم", "البومة الذكية", "القط المشاكس",
+            "الحصان الأصيل", "البقرة الحلوب", "العنزة الجريئة", "الغراب الذكي", "السمكة الصغيرة في البحر الكبير"
+        ];
+
+        for (let i = 0; i < 30; i++) {
+            let title = storyTitles[i];
+            storiesData.push({
+                id: i + 1,
+                title: `القصة رقم ${i + 1}: ${title}`,
+                text: `كان ياما كان، في قديم الزمان، قصة جميلة وممتعة تتحدث عن ${title}. كان بطل القصة يحب مساعدة أصدقائه، ويتعلم كل يوم درساً مفيداً وجميلاً. في أحد الأيام الجميلة، واجه بطلنا موقفاً يحتاج إلى تفكير وشجاعة، فبفضل تعاونة وذكائه استطاع تجاوز المشكلة بكل سهولة وفرح، وعاش الجميع في سعادة وسلام.`,
+                questions: [
+                    { q: "ما اسم بطل القصة أو موضوعها الرئيسي؟", options: [title, "شخص آخر", "لا شيء"], answer: 0 },
+                    { q: "هل ساعد بطل القصة أصدقاءه؟", options: ["نعم، ساعدهم بكل حب", "لا، لم يساعد أحداً", "لم يظهر أصدقاء"], answer: 0 },
+                    { q: "كيف تصرف البطل عندما واجه الموقف؟", options: ["بتعاون وذكاء وشجاعة", "بغضب شديد", "هرب وترك المكان"], answer: 0 },
+                    { q: "كيف كانت نهاية القصة؟", options: ["عاش الجميع في سعادة وسلام", "نهاية حزينة", "لا توجد نهاية"], answer: 0 },
+                    { q: "ما الدرس المستفاد من هذه القصة؟", options: ["التعاون وفعل الخير جميل", "عدم الكلام مع أحد", "الكسل مفيد"], answer: 0 }
+                ]
+            });
+        }
+
+        let currentStudent = { name: "", class: "" };
+        let activeStoryId = null;
+
+        function hideAllScreens() {
+            document.getElementById('home-screen').classList.add('hidden');
+            document.getElementById('student-login-screen').classList.add('hidden');
+            document.getElementById('teacher-auth-screen').classList.add('hidden');
+            document.getElementById('stories-list-screen').classList.add('hidden');
+            document.getElementById('story-reader-screen').classList.add('hidden');
+            document.getElementById('teacher-dashboard-screen').classList.add('hidden');
+        }
+
+        function goHome() {
+            hideAllScreens();
+            document.getElementById('home-screen').classList.remove('hidden');
+        }
+
+        function showStudentLogin() {
+            hideAllScreens();
+            document.getElementById('student-login-screen').classList.remove('hidden');
+        }
+
+        function showTeacherLogin() {
+            hideAllScreens();
+            document.getElementById('teacher-auth-screen').classList.remove('hidden');
+        }
+
+        function startStudentJourney() {
+            const name = document.getElementById('student-name').value.trim();
+            const className = document.getElementById('student-class').value.trim();
+            if(!name || !className) {
+                alert("الرجاء إدخال اسم الطالب واسم الصف بشكل صحيح.");
+                return;
+            }
+            currentStudent.name = name;
+            currentStudent.class = className;
+            
+            document.getElementById('welcome-student-msg').innerText = `أهلاً بك يا بطل: ${name} (${className})`;
+            loadStoriesList();
+            hideAllScreens();
+            document.getElementById('stories-list-screen').classList.remove('hidden');
+        }
+
+        function verifyTeacher() {
+            const pass = document.getElementById('teacher-pass').value;
+            if(pass === "1234") {
+                loadTeacherDashboard();
+                hideAllScreens();
+                document.getElementById('teacher-dashboard-screen').classList.remove('hidden');
+            } else {
+                alert("كلمة المرور غير صحيحة! (الافتراضية: 1234)");
+            }
+        }
+
+        function loadStoriesList() {
+            const container = document.getElementById('stories-grid-container');
+            container.innerHTML = "";
+            storiesData.forEach(story => {
+                container.innerHTML += `
+                    <div class="story-card">
+                        <div>
+                            <h3>${story.title}</h3>
+                            <p>قصة ممتعة ومشوقة مع 5 أسئلة فهم.</p>
+                        </div>
+                        <button class="btn" style="padding: 8px; font-size: 0.9rem;" onclick="openStory(${story.id})">اقرأ والعب 📖</button>
+                    </div>
+                `;
+            });
+        }
+
+        function openStory(id) {
+            activeStoryId = id;
+            const story = storiesData.find(s => s.id === id);
+            
+            document.getElementById('reader-story-title').innerText = story.title;
+            document.getElementById('reader-story-text').innerText = story.text;
+
+            const quizContainer = document.getElementById('quiz-questions-container');
+            quizContainer.innerHTML = "";
+            
+            story.questions.forEach((q, qIdx) => {
+                let optionsHtml = "";
+                q.options.forEach((opt, optIdx) => {
+                    optionsHtml += `
+                        <label>
+                            <input type="radio" name="q_${qIdx}" value="${optIdx}"> ${opt}
+                        </label>
+                    `;
+                });
+                quizContainer.innerHTML += `
+                    <div class="question-box">
+                        <p><strong>السؤال ${qIdx + 1}:</strong> ${q.q}</p>
+                        <div class="options">${optionsHtml}</div>
+                    </div>
+                `;
+            });
+
+            hideAllScreens();
+            document.getElementById('story-reader-screen').classList.remove('hidden');
+        }
+
+        function backToStories() {
+            hideAllScreens();
+            document.getElementById('stories-list-screen').classList.remove('hidden');
+        }
+
+        // إرسال النتيجة إلى Firebase تلقائياً
+        function submitQuiz() {
+            const story = storiesData.find(s => s.id === activeStoryId);
+            let score = 0;
+
+            for(let i = 0; i < story.questions.length; i++) {
+                const radios = document.getElementsByName(`q_${i}`);
+                let answered = false;
+                for(let r of radios) {
+                    if(r.checked) {
+                        answered = true;
+                        if(parseInt(r.value) === story.questions[i].answer) {
+                            score++;
+                        }
+                    }
+                }
+                if(!answered) {
+                    alert(`الرجاء الإجابة عن جميع الأسئلة (السؤال ${i + 1} لم يُجب عليه).`);
+                    return;
+                }
+            }
+
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.innerText = "جاري إرسال النتيجة...";
+
+            // حفظ النتيجة سحابياً ليراها المعلم فوراً
+            db.collection("student_results").add({
+                name: currentStudent.name,
+                className: currentStudent.class,
+                storyTitle: story.title,
+                score: score,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                dateStr: new Date().toLocaleString('ar-SA')
+            }).then(() => {
+                alert(`🎉 أحسنت يا بطل! لقد أكملت القصة بنجاح.\nدرجتك هي: ${score} من 5\nتم حفظ النتيجة عند المعلم بنجاح!`);
+                btn.disabled = false;
+                btn.innerText = "إرسال الإجابات وحفظ النتيجة";
+                backToStories();
+            }).catch(error => {
+                console.error("Error adding document: ", error);
+                alert("حدث خطأ أثناء حفظ النتيجة، حاول مرة أخرى.");
+                btn.disabled = false;
+                btn.innerText = "إرسال الإجابات وحفظ النتيجة";
+            });
+        }
+
+        // قراءة نتائج جميع الطلاب من السحابة وعرضها للمعلم
+        function loadTeacherDashboard() {
+            const tableBody = document.getElementById('teacher-records-table');
+            tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">جاري جلب بيانات الطلاب... ⏳</td></tr>`;
+
+            db.collection("student_results").orderBy("timestamp", "desc").get().then((querySnapshot) => {
+                tableBody.innerHTML = "";
+                if(querySnapshot.empty) {
+                    tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">لا توجد سجلات طلاب حتى الآن.</td></tr>`;
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const rec = doc.data();
+                    tableBody.innerHTML += `
+                        <tr>
+                            <td>${rec.name || '-'}</td>
+                            <td>${rec.className || '-'}</td>
+                            <td>${rec.storyTitle || '-'}</td>
+                            <td><strong>${rec.score} / 5</strong></td>
+                            <td>${rec.dateStr || 'الآن'}</td>
+                        </tr>
+                    `;
+                });
+            }).catch((error) => {
+                console.error("Error getting documents: ", error);
+                tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">حدث خطأ أثناء جلب البيانات.</td></tr>`;
+            });
+        }
+    </script>
+</body>
+</html>
